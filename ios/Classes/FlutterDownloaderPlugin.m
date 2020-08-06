@@ -861,8 +861,12 @@ static BOOL debug = YES;
         int progress = round(totalBytesWritten * 100 / (double)totalBytesExpectedToWrite);
         NSNumber *lastProgress = _runningTaskById[taskId][KEY_PROGRESS];
         if (([lastProgress intValue] == 0 || (progress > ([lastProgress intValue] + _stepUpdate)) || progress == 100) && progress != [lastProgress intValue]) {
-            [self updateTask:taskId status:STATUS_RUNNING progress:progress];
+            __typeof__(self) __weak weakSelf = self;
             [self sendUpdateProgressForTaskId:taskId inStatus:@(STATUS_RUNNING) andProgress:@(progress)];
+            dispatch_sync(databaseQueue, ^{
+                [weakSelf updateTask:taskId status:STATUS_RUNNING progress:progress];
+            });
+
             _runningTaskById[taskId][KEY_PROGRESS] = @(progress);
         }
     }
